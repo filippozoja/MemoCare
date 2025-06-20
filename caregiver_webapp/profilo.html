@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profilo Utente</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #2f76f6;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      padding: 0;
+      height: 100vh;
+    }
+    .profile h2 {
+      margin: 0;
+      font-size: 24px;
+      text-align: left;
+      display: block;
+      line-height: 1.2;
+    }
+    .card.nuova {
+      background-color: #2f76f6;
+    }
+    .subtitle {
+      font-weight: 400;
+      font-size: 15px;
+    }
+    .card.guida {
+      background-color: #5fa8f9;
+    }
+    .subtitlecard {
+      font-weight: 400;
+      font-size: 1rem;
+      padding: 0px 30px 0px 0px;
+    }
+  </style>
+</head>
+<body>
+  <script>
+  // Se non esiste username in localStorage, reindirizza a index.html
+  if (!localStorage.getItem('username')) {
+    window.location.replace('index.html');
+  }
+  </script>
+  <div class="header">
+    <img src="icon/icon-sun.png" alt="Icona Sole" />
+  </div>
+
+  <div class="profile">
+    <div class="greeting-table" style="margin-bottom: 10px;">
+      <table style="border-collapse: collapse; width: 100%;">
+        <tr>
+          <td style="font-size: 40px; vertical-align: middle; width: 50px;">👋🏻</td>
+          <td style="vertical-align: middle; text-align: left;">
+            <span class="greeting-text" style="font-size: 40px; font-weight: bold; display: block;">Ciao,</span>
+          </td>
+        </tr>
+        <tr>
+          <td></td>
+          <td style="vertical-align: top; text-align: left;">
+            <span id="username" style="font-size: 40px; font-weight: bold;"></span>
+          </td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>
+            <p class="subtitle">
+              <a href="modifica_profilo.html" style="text-decoration: none; color: #666; font-size: 12px;">
+              Modifica il tuo profilo ✏️
+              </a>
+            </p>
+        </td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><p id="currentDate" style="margin: 5px 0; font-weight: 600; font-size: 14px;"></p></td>
+        </tr>
+      </table>
+    </div>
+
+    <a href="attivita.html" style="text-decoration: none;">
+      <div class="card nuova">
+        <p class="titlecard">Attività</p>
+        <p class="subtitlecard">Inserisci ogni giorno i nuovi dati delle card e visualizza il riepilogo</p>
+      </div>
+    </a>
+
+    <a href="guida_home.html" style="text-decoration: none;">
+      <div class="card guida">
+        <p class="titlecard">Guida</p>
+        <p class="subtitlecard">Visualizza la guida per l’utilizzo delle card e della relativa app</p>
+      </div>
+    </a>
+    <button id="logoutBtn" type="button" class="back-button">Logout</button>
+  </div>
+  <script>
+    const nomeUtente = localStorage.getItem('username');
+    document.getElementById('username').textContent = nomeUtente || '';
+    // Fetch current date from an internet API (WorldTimeAPI)
+    fetch('https://worldtimeapi.org/api/timezone/Europe/Rome')
+      .then(res => res.json())
+      .then(data => {
+        // data.datetime is like "2025-05-14T14:20:30.123456+02:00"
+        const dt = new Date(data.datetime);
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formatted = dt.toLocaleDateString('it-IT', options);
+        document.getElementById('currentDate').textContent = `Oggi è ${formatted}`;
+      })
+      .catch(err => {
+        console.error('Errore nel recupero data da internet:', err);
+        // Fallback to local date
+        const oggi = new Date();
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formatted = oggi.toLocaleDateString('it-IT', options);
+        document.getElementById('currentDate').textContent = `Oggi è ${formatted}`;
+      });
+  </script>
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      // Clear user session data
+      localStorage.removeItem('username');
+      // Redirect to login page
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

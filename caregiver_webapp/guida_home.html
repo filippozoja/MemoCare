@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profilo Utente</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #2f76f6;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      padding: 0;
+      height: 100vh;
+    }
+    .profile h2 {
+      margin: 0;
+      font-size: 24px;
+      text-align: left;
+      display: block;
+      line-height: 1.2;
+    }
+    .profile p {
+      margin: 5px 0 20px 0;
+      
+    }
+    .card {
+      border-radius: 20px;
+      color: white;
+      font-size: 14px;
+      text-align: center;
+      font-weight: 400;
+      box-shadow: 0 6px 6px rgba(0, 0, 0, 0.1);
+      background-color: #2f76f6;
+      padding: 10px 30px 1px 30px;
+    }
+    .titlecard {
+      text-align: center;
+      font-weight: 400;
+      font-size: 14px;
+    }
+
+    .container-img {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+    }
+    .card-link {
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    .subtitle{
+      padding-top: 20px;
+      font-size: .9em;
+      font-weight: 400;
+    }
+    .maintitle{
+      font-size: 1.5em;
+      font-weight: 400;
+      padding-top: 20px;
+
+    }
+    .maintitle2{
+      color: #2f76f6;
+      font-size: 1.5em;
+      font-weight: 400;
+    }
+    h3 {
+      padding: 0;
+      margin: 0;
+    }
+    .back-button {
+      display: block;
+      width: calc(100% - 40px);
+      max-width: 400px;
+      margin: 20px auto 20px auto;
+      padding: 12px;
+      font-size: 1rem;
+      color: #fff;
+      background-color: #2f76f6;
+      border: none;
+      border-radius: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #265ecf; /* slightly darker on hover */
+    }
+  </style>
+</head>
+<body>
+  <script>
+  // Se non esiste username in localStorage, reindirizza a index.html
+  if (!localStorage.getItem('username')) {
+    window.location.replace('index.html');
+  }
+  </script>
+  <div class="header">
+    <a href="profilo.html">
+      <img src="icon/icon-sun.png" alt="Icona Sole" />
+    </a>
+  </div>
+  <div class="profile">
+    <div class="greeting-table" style="margin-bottom: 10px;">
+      <table style="border-collapse: collapse; width: 100%;">
+        <tr>
+          <td></td>
+          <td>
+            <div>
+              <h3 class="maintitle">Benvenuto su</h2>
+              <h3 class="maintitle2">MemoCare!</h2>
+            </div>
+            <p class="subtitle">MemoCare è il sistema che unisce un'app e un dispositivo fisico che aiuterà te e la persona che assisti ad organizzare una routine semplice, chiara e condivisa.</p>
+          </td>
+       </tr>
+      </table>
+      <div class="container-img">
+        <img src="img/guida1.png" alt="guida1" class="img-guida">
+      </div>
+      <div class="button-group">
+        <a href="guida_app1.html" class="card-link">
+          <div class="card"><p class="titlecard">App</p></div>
+        </a>
+        <a href="guida_disp1.html" class="card-link">
+          <div class="card"><p class="titlecard">Dispositivo</p></div>
+        </a>
+      </div>
+      <button class="back-button" onclick="window.location.href='profilo.html'">← Indietro</button>
+  <script>
+    const nomeUtente = localStorage.getItem('username');
+    document.getElementById('username').textContent = nomeUtente || '';
+    // Fetch current date from an internet API (WorldTimeAPI)
+    fetch('https://worldtimeapi.org/api/timezone/Europe/Rome')
+      .then(res => res.json())
+      .then(data => {
+        // data.datetime is like "2025-05-14T14:20:30.123456+02:00"
+        const dt = new Date(data.datetime);
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formatted = dt.toLocaleDateString('it-IT', options);
+        document.getElementById('currentDate').textContent = `Oggi è ${formatted}`;
+      })
+      .catch(err => {
+        console.error('Errore nel recupero data da internet:', err);
+        // Fallback to local date
+        const oggi = new Date();
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formatted = oggi.toLocaleDateString('it-IT', options);
+        document.getElementById('currentDate').textContent = `Oggi è ${formatted}`;
+      });
+  </script>
+</body>
+</html>

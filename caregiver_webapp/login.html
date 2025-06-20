@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    :root {
+      --primary-color: #007AFF;
+      --background-color: #f4f4f4;
+      --input-bg: #dadada;
+      --font-family: 'Inter', sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0; padding: 0;
+    }
+    .login-screen {
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      font-weight: bold; display: block; margin-bottom: 8px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%; padding: 14px 16px; border: none;
+      border-radius: 15px; background-color: var(--input-bg); font-size: 1em;
+    }
+    .forgot-password {
+      font-size: 0.8rem; text-align: right; margin: -10px 0 20px;
+    }
+    .forgot-password a {
+      color: var(--primary-color); text-decoration: none; font-weight: bold; font-size: 0.75rem;
+    }
+    .field-error {
+      color: #dc3545; font-size: 0.9rem; margin-top: 4px; display: none;
+    }
+    .login-error {
+      color: #dc3545; font-size: 0.9rem; margin: 0 0 16px 0; display: none;
+    }
+    .bottom-row {
+      display: flex; justify-content: center; align-items: center; gap: 20px;
+    }
+    .bottom-row a, .login-button {
+      text-decoration: none; color: black;
+      display: flex; justify-content: center; align-items: center;
+      width: 110px; height: 50px; background-color: #f4f4f4;
+      border: 2px solid var(--primary-color); border-radius: 15px;
+      font-weight: bold; font-size: 1em; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="">
+    <div class="header">
+      <img src="icon/icon-sun.png" alt="Icona Sole" />
+    </div>
+    <div class="profile">
+      <h1>Bentornato!</h1>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Nome</label>
+          <input type="text" id="username" name="username" />
+          <div id="usernameError" class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" />
+          <div id="passwordError" class="field-error"></div>
+        </div>
+        <div class="forgot-password">
+          <a href="#">Password dimenticata?</a>
+        </div>
+        <div id="loginError" class="login-error"></div>
+        <div class="bottom-row">
+          <a href="index.html">Indietro</a>
+          <button type="submit" class="login-button">Accedi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('usernameError').style.display = 'none';
+      document.getElementById('passwordError').style.display = 'none';
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      if (!username) {
+        const ue = document.getElementById('usernameError');
+        ue.textContent = 'Inserisci il nome utente.';
+        ue.style.display = 'block';
+        return;
+      }
+      if (!password) {
+        const pe = document.getElementById('passwordError');
+        pe.textContent = 'Inserisci la password.';
+        pe.style.display = 'block';
+        return;
+      }
+      const formData = new URLSearchParams();
+      formData.append('username', username);
+      formData.append('password', password);
+      fetch("php/login.php", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Network response not OK");
+        return response.json();
+      })
+      .then(data => {
+        console.log("login.php response:", data);
+        if (data.status === "success") {
+          localStorage.setItem("username", data.username);
+          window.location.href = "profilo.html";
+        } else {
+          const loginErr = document.getElementById('loginError');
+          loginErr.textContent = data.msg || 'Nome utente o password errati.';
+          loginErr.style.display = 'block';
+        }
+      })
+      .catch(err => {
+        console.error("Errore nel login:", err);
+        const loginErr = document.getElementById('loginError');
+        loginErr.textContent = 'Errore di rete durante il login.';
+        loginErr.style.display = 'block';
+      });
+    });
+  </script>
+</body>
+</html>
