@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>Riepilogo</title>
+  <link rel="stylesheet" href="css/style.css" />
+    <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #2f76f6;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      padding: 0;
+      height: 100vh;
+    }
+    .card {
+      margin: 10px 0px 0px 0px;
+      padding: 10px 20px;
+      color: black;
+      font-weight: 500;
+      box-shadow: 0 6px 6px rgba(0, 0, 0, 0.1);
+      max-width: calc(100% - 40px);
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      border-radius: 30px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      overflow: visible;
+
+    }
+    
+    /* Palette per colori diversi con opacità 30% */
+    .palette { background-color: rgb(164, 185, 255); }
+    .card .titlecard {
+      font-weight: 600;
+      font-size: .8rem;
+    }
+    .card .subtitlecard {
+      font-weight: 400;
+      font-size: .8rem;
+    }
+    .subtitle-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .subtitle-row .subtitlecard {
+      margin: 0;
+    }
+
+    /* Stato completato: grigio, text-decoration bar */
+    .card.completed {
+      background-color: #ccc;
+      color: #666;
+    }
+    .card.completed .titlecard,
+    .card.completed .subtitlecard {
+      text-decoration: line-through;
+    }
+  </style>
+  </style>
+</head>
+<body>
+  <script>
+  // Se non esiste username in localStorage, reindirizza a index.html
+  if (!localStorage.getItem('username')) {
+    window.location.replace('index.html');
+  }
+  </script>
+  <script>
+    const username = localStorage.getItem('username');
+  </script>
+  <div class="header">
+    <a href="profilo.html">
+      <img src="icon/icon-sun.png" alt="Icona Sole" />
+    </a>
+  </div>
+  <div class="profile">
+      <div class="card palette">
+        <p class="titlecard" id="title_slot_1">-</p>
+        <div class="subtitle-row">
+          <p class="subtitlecard">orario inizio</p>
+          <p class="subtitlecard">durata</p>
+          <p class="subtitlecard">preavviso</p>
+        </div>
+      </div>
+
+      <div class="card palette">
+        <p class="titlecard" id="title_slot_2">-</p>
+        <div class="subtitle-row">
+          <p class="subtitlecard">orario inizio</p>
+          <p class="subtitlecard">durata</p>
+          <p class="subtitlecard">preavviso</p>
+        </div>
+      </div>
+
+      <div class="card palette">
+        <p class="titlecard" id="title_slot_3">-</p>
+        <div class="subtitle-row">
+          <p class="subtitlecard">orario inizio</p>
+          <p class="subtitlecard">durata</p>
+          <p class="subtitlecard">preavviso</p>
+        </div>
+      </div>
+
+      <div class="card palette">
+        <p class="titlecard" id="title_slot_4">-</p>
+        <div class="subtitle-row">
+          <p class="subtitlecard">orario inizio</p>
+          <p class="subtitlecard">durata</p>
+          <p class="subtitlecard">preavviso</p>
+        </div>
+      </div>
+      <div class="card palette">
+        <p class="titlecard" id="title_slot_5">-</p>
+        <div class="subtitle-row">
+          <p class="subtitlecard">orario inizio</p>
+          <p class="subtitlecard">durata</p>
+          <p class="subtitlecard">preavviso</p>
+        </div>
+      </div>
+      <div class="card palette">
+        <p class="titlecard" id="title_slot_6">-</p>
+        <div class="subtitle-row">
+          <p class="subtitlecard">orario inizio</p>
+          <p class="subtitlecard">durata</p>
+          <p class="subtitlecard">preavviso</p>
+        </div>
+      </div>
+      <button onclick="window.location.href='attivita.html'" class="back-button">← Torna alla configurazione</button>
+  </div>  
+  <script>
+    // Calcola la data odierna in formato YYYY-MM-DD (fuso locale)
+    const now = new Date();
+    const today = 
+      now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0');
+
+    fetch(`php/get_attivita.php?username=${encodeURIComponent(username)}`)
+      .then(res => res.json())
+      .then(data => {
+        data.forEach(item => {
+          // Mostra solo attività con data_attivita uguale a oggi
+          if (item.data_attivita !== today) return;
+
+          const titleEl = document.getElementById(`title_slot_${item.slot}`);
+          if (!titleEl) return;
+
+          // Frase completa: Attività + Dove + Con chi + Icona
+          titleEl.textContent = `${item.nome} a ${item.dove} con ${item.conchi} ${item.icona}`;
+
+          // Estrai solo ore e minuti per l'orario d'inizio
+          const [hStart, mStart] = item.ora_inizio.split(':');
+          const orario = `${hStart}:${mStart}`;
+
+          // Converte durata (in minuti) in ore e minuti
+          const durMin = parseInt(item.durata, 10);
+          const durH = Math.floor(durMin / 60);
+          const durM = durMin % 60;
+          const durStr = durH
+            ? `${durH}h${durM ? ` ${durM}m` : ''}`
+            : `${durM}m`;
+
+          // Converte preavviso (in minuti) in ore e minuti
+          const prevMin = parseInt(item.preavviso, 10);
+          const prevH = Math.floor(prevMin / 60);
+          const prevM = prevMin % 60;
+          const prevStr = prevH
+            ? `${prevH}h${prevM ? ` ${prevM}m` : ''}`
+            : `${prevM}m`;
+
+          // Sottotitoli: orario, durata, preavviso
+          const subtitleRow = titleEl.nextElementSibling;
+          if (subtitleRow) {
+            const subs = subtitleRow.querySelectorAll('.subtitlecard');
+            if (subs[0]) subs[0].textContent = `Orario inizio: ${orario}`;
+            if (subs[1]) subs[1].textContent = `Durata: ${durStr}`;
+            if (subs[2]) subs[2].textContent = `Preavviso: ${prevStr}`;
+          }
+        });
+      })
+      .catch(err => {
+        console.error("Errore nel caricamento attività:", err);
+      });
+  </script>
+  <script>
+    // Recupera feedback e colora le card completate
+    fetch(`php/get_feedback.php?username=${encodeURIComponent(username)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "ok") {
+          data.feedback.forEach(entry => {
+            const cardEl = document.getElementById(`title_slot_${entry.slot}`);
+            if (cardEl) {
+              cardEl.closest('.card').classList.add('completed');
+            }
+          });
+        }
+      })
+      .catch(err => console.error("Errore nel caricamento dei feedback:", err));
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker registrato'))
+        .catch(error => console.error('SW registration failed:', error));
+    }
+  </script>
+</body>
+</html>
