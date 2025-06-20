@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profilo Utente</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #2f76f6;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      padding: 0;
+      height: 100vh;
+    }
+    .profile h2 {
+      margin: 0;
+      font-size: 24px;
+      text-align: left;
+      display: block;
+      line-height: 1.2;
+    }
+    .card.nuova {
+      background-color: #7580f0;
+      margin-top: 15%;
+    }
+    .card.guida {
+      background-color: #b8a1f7;
+      margin-top: 15%;
+    }
+    .card .titlecard {
+      font-weight: 600;
+      font-size: 1.5rem;
+      padding: 0px 0px 10px 0px;
+    }
+    .card .subtitlecard {
+      font-weight: 400;
+      font-size: 1rem;
+      padding: 0px 30px 0px 0px;
+    }
+    /* Icona in alto a destra */
+    .card-icon {
+      position: absolute;
+      top: -64px;     /* move above the card */
+      right: 16px;    /* inset from right edge */
+      width: 116px;    /* maybe larger for the illustration */
+      height: auto;
+      object-fit: contain;
+      overflow: visible;
+    }
+    .card-icon2 {
+      position: absolute;
+      top: -40px;     /* move above the card */
+      right: 16px;    /* inset from right edge */
+      width: 116px;    /* maybe larger for the illustration */
+      height: auto;
+      object-fit: contain;
+      overflow: visible;
+    }
+
+  </style>
+</head>
+<body>
+  <script>
+  // Se non esiste username in localStorage, reindirizza a index.html
+  if (!localStorage.getItem('username')) {
+    window.location.replace('index.html');
+  }
+  </script>
+  <div class="header">
+    <a href="profilo.html">
+      <img src="icon/icon-sun.png" alt="Icona Sole" />
+    </a>
+  </div>
+
+  <div class="profile">
+    <a href="aggiorna_card.html" style="text-decoration: none;">
+      <div class="card nuova">
+        <p class="titlecard">Aggiorna le card</p>
+        <p class="subtitlecard">Inserisci i nuovi dati delle card di domani!</p>
+        <img src="img/guy1.png" alt="" class="card-icon">
+      </div>
+    </a>
+
+    <a href="riepilogo.html" style="text-decoration: none;">
+      <div class="card guida">
+        <p class="titlecard">Riepilogo</p>
+        <p class="subtitlecard">Visualizza il riepilogo delle card di oggi!</p>
+        <img src="img/calendar.png" alt="" class="card-icon2">
+      </div>
+    </a>
+
+    <button class="back-button" onclick="window.location.href='profilo.html'">← Indietro</button>
+  </div>
+  <script>
+    const nomeUtente = localStorage.getItem('username');
+    document.getElementById('username').textContent = nomeUtente || '';
+    // Fetch current date from an internet API (WorldTimeAPI)
+    fetch('https://worldtimeapi.org/api/timezone/Europe/Rome')
+      .then(res => res.json())
+      .then(data => {
+        // data.datetime is like "2025-05-14T14:20:30.123456+02:00"
+        const dt = new Date(data.datetime);
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formatted = dt.toLocaleDateString('it-IT', options);
+        document.getElementById('currentDate').textContent = `Oggi è ${formatted}`;
+      })
+      .catch(err => {
+        console.error('Errore nel recupero data da internet:', err);
+        // Fallback to local date
+        const oggi = new Date();
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formatted = oggi.toLocaleDateString('it-IT', options);
+        document.getElementById('currentDate').textContent = `Oggi è ${formatted}`;
+      });
+  </script>
+</body>
+</html>
