@@ -28,6 +28,11 @@ const long  ACTIVE_START_SEC = 5 * 3600L;   // 05:00 = 5*3600 s
 const long  ACTIVE_END_SEC   = 23 * 3600L;  // 23:00 = 23*3600 s
 const long  ACTIVE_WINDOW    = ACTIVE_END_SEC - ACTIVE_START_SEC; // 18h in s
 
+// ——— SOFT BLINK PARAMETERS —————————————————————————————————————
+const unsigned long BLINK_INTERVAL_MS = 500;
+unsigned long lastBlinkTime = 0;
+bool blinkState = false;
+
 long secs = 0;
 int currHour = 0;
 
@@ -167,6 +172,15 @@ void sendHour() {
   swSerial.print("\n");
 }
 
+// Overloaded sendHour to force a specific hour
+void sendHour(int forcedHour) {
+  char hourStr[3];
+  snprintf(hourStr, sizeof(hourStr), "%02d", forcedHour);
+  Serial.println(hourStr);
+  swSerial.print(hourStr);
+  swSerial.print("\n");
+}
+
 // ----------------------------------------------------------
 #define BUTTON_PIN 15
 bool prevButtonState = false;
@@ -186,12 +200,32 @@ bool readButton() {
   return currState;
 }
 
+
 // Prototipo per funzione buzzer
 void buzzSuccess(int duration_ms);
+
+// Spegne tutte le luci LED
+void turnOffLEDs() {
+  for (uint8_t i = 0; i < numLeds; i++) {
+    digitalWrite(ledPins[i], LOW);
+  }
+}
+
+// Aggiorna i LED in base all'ora specificata
+void updateLEDsForHour(int hour) {
+  turnOffLEDs();
+  if (hour >= 5 && hour < 23) {
+    int idx = (hour - 5) / 3;
+    if (idx >= 0 && idx < numLeds && activityWindow[idx]) {
+      digitalWrite(ledPins[idx], HIGH);
+    }
+  }
+}
 
 // Invia un feedback (stato pulsante) al server via HTTP POST
 void sendFeedback(bool buttonState, int slot)
 {
+  turnOffLEDs();
   HTTPClient http;
   http.begin(feedbackURL);
   http.addHeader("Content-Type", "application/json");
@@ -249,6 +283,7 @@ long lastInterval = -1;
 
 // Sequencer per flusso custom
 int sequenceState = 0;
+int case1Dir = 0; // +1 or -1: direction used in case 1
 
 void setup() {
   Serial.begin(115200);
@@ -328,7 +363,6 @@ void setup() {
   Serial.printf("Ora: %02ld:%02ld:%02ld  (%ld s)\n\n",
                 secs/3600, (secs%3600)/60, secs%60, secs);
 
-
   if (secs >= ACTIVE_START_SEC && secs < ACTIVE_END_SEC) {
     long elapsed = secs - ACTIVE_START_SEC;              // secondi dopo le 05:00
     float frac = float(elapsed) / float(ACTIVE_WINDOW);  // frazione di 18h
@@ -343,24 +377,33 @@ void setup() {
 
     stepper.setMaxSpeed(STEPPER_SPEED);
 
-
-
-    // Imposto ciclo manuale: faccio girare a +600 o -600 finché non arrivo
-    //stepper.moveTo(targetPos);
+    // Imposto direzione e velocità
     if (targetPos < stepper.currentPosition()) {
       stepper.setSpeed(+STEPPER_SPEED);
     } else {
       stepper.setSpeed(-STEPPER_SPEED);
     }
 
-    // Ciclo fino a targetPos, stampando ogni 5000 passi
+    // Soft blink LEDs until arrival
+    lastBlinkTime = millis();
+    blinkState = false;
     while (-stepper.currentPosition() != targetPos) {
       stepper.runSpeed();
       long pos = -stepper.currentPosition();
+      // Soft blink all LEDs
+      if (millis() - lastBlinkTime >= BLINK_INTERVAL_MS) {
+        lastBlinkTime = millis();
+        blinkState = !blinkState;
+        for (uint8_t i = 0; i < numLeds; i++) {
+          //digitalWrite(ledPins[i], blinkState ? HIGH : LOW);
+        }
+      }
       if (pos % 5000 == 0) {
         Serial.printf("    [DEBUG] currentPosition intermedia = %ld\n", pos);
       }
     }
+    // Stop blinking and clear LEDs
+    turnOffLEDs();
     Serial.println("→ Arrivato al target iniziale!");
     Serial.printf("  [DEBUG] Posizione dopo movimento = %ld\n", -stepper.currentPosition());
   } else {
@@ -422,25 +465,42 @@ void loop() {
       // Fermo, aspetto rilascio, poi invio feedback slot 3
       if (buttonReleased) {
         sendFeedback(true, 3);
+        // Ripristino LED per l'ora corrente
+        {
+          long secsNow = getSecondsSinceMidnight();
+          if (secsNow >= 0) {
+            int hourNow = secsNow / 3600;
+            updateLEDsForHour(hourNow);
+          }
+        }
         sequenceState = 1;
       }
       break;
     case 1: {
-      Serial.println("DEBUG: State 1 - moving to simulated 19:00 position");
-      // Muovo come se fossero le 19:00
-      int h = 19;
-      long targetPos = round(float((h * 3600L - ACTIVE_START_SEC)) / float(ACTIVE_WINDOW) * TOTAL_STEPS);
-      stepper.setMaxSpeed(STEPPER_SPEED);
-      if (targetPos < stepper.currentPosition()) {
-        stepper.setSpeed(+STEPPER_SPEED);
-      } else {
-        stepper.setSpeed(-STEPPER_SPEED);
+      Serial.println("DEBUG: State 1 - moving by +2 hours");
+      // Calcolo l'ora corrente e aggiungo due ore
+      long secsNow = getSecondsSinceMidnight();
+      if (secsNow < 0) {
+        Serial.println("Errore nel calcolo dell'ora corrente.");
+        break;
       }
+      int currHourNow = secsNow / 3600;
+      int targetHour = (currHourNow + 2) % 24;
+      // Calcolo la posizione target in base a targetHour
+      long relSec = targetHour * 3600L - ACTIVE_START_SEC;
+      long targetPos = round(float(relSec) / float(ACTIVE_WINDOW) * TOTAL_STEPS);
+      // Muovo stepper verso targetPos
+      stepper.setMaxSpeed(STEPPER_SPEED);
+      // Store direction for reuse in case3 and case4
+      case1Dir = (targetPos < stepper.currentPosition()) ? +1 : -1;
+      stepper.setSpeed(case1Dir * STEPPER_SPEED);
       while (-stepper.currentPosition() != targetPos) {
         stepper.runSpeed();
       }
       stepper.setSpeed(0);
-      sendHour();
+      // Invio ora e aggiorno LED
+      sendHour(targetHour);
+      updateLEDsForHour(targetHour);
       sequenceState = 2;
       break;
     }
@@ -449,34 +509,31 @@ void loop() {
       // Fermo, aspetto rilascio, poi invio feedback slot 5
       if (buttonReleased) {
         sendFeedback(true, 5);
+        // Salvo lo stato iniziale del finecorsa B per case 3
+        prevSwitchBState = digitalRead(SWITCH_B_PIN);
         sequenceState = 3;
       }
       break;
     case 3:
       Serial.println("DEBUG: State 3 - moving towards switch B");
-      // Muovo verso finecorsa B
-      stepper.setSpeed(+STEPPER_SPEED);
+      // Muovo verso finecorsa B e rilevo cambiamento di stato (qualsiasi livello)
+      stepper.setSpeed(case1Dir * STEPPER_SPEED);
       while (true) {
         stepper.runSpeed();
         bool currB = digitalRead(SWITCH_B_PIN);
-        if (currB != prevSwitchBState) {
-          // cambio di stato sul finecorsa B
-          if (currB == LOW && debounceCheck(SWITCH_B_PIN, LOW)) {
-            prevSwitchBState = currB;
-            break;
-          }
+        if (currB != prevSwitchBState && debounceCheck(SWITCH_B_PIN, currB)) {
           prevSwitchBState = currB;
+          break;
         }
       }
       stepper.setSpeed(0);
-      // Azzeramento posizione su B
       stepper.setCurrentPosition(0);
       sequenceState = 4;
       break;
     case 4:
       Serial.println("DEBUG: State 4 - returning to switch A");
       // Torno a finecorsa A
-      stepper.setSpeed(-STEPPER_SPEED);
+      stepper.setSpeed(-case1Dir * STEPPER_SPEED);
       while (true) {
         stepper.runSpeed();
         bool currA = digitalRead(SWITCH_A_PIN);
